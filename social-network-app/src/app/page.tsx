@@ -1,20 +1,42 @@
-import Link from "next/link";
+"use client";
 
-export default function Home() {
+import React, { useEffect, useState } from "react";
+import { useAuth } from "../lib/hooks/useAuth";
+import { listenToRecentPosts } from "../lib/firebase/firebaseUtils";
+import { Post } from "../lib/types";
+import PostCard from "../components/PostCard";
+import SignInWithGoogle from "../components/SignInWithGoogle";
+
+export default function HomeFeedPage() {
+  const { user, loading } = useAuth();
+  const [posts, setPosts] = useState<Post[]>([]);
+
+  useEffect(() => {
+    const unsub = listenToRecentPosts(setPosts);
+    return () => unsub();
+  }, []);
+
+  if (loading) return <div className="text-center">Loading...</div>;
+
+  if (!user) {
+    return (
+      <div className="max-w-md mx-auto text-center space-y-4">
+        <h1 className="text-2xl font-semibold">Welcome to Social</h1>
+        <p className="text-gray-600">Sign in to view and create posts.</p>
+        <div className="flex justify-center">
+          <SignInWithGoogle />
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-8">
-      <div>
-        <h2 className="text-2xl font-semibold text-center border p-4 font-mono rounded-md">
-          Starter Template
-        </h2>
-      </div>
-      <div>
-        <h1 className="text-6xl font-bold text-center">3, 2, 1... Go!</h1>
-        <h2 className="text-2xl text-center font-light text-gray-500 pt-4">
-          This page will be replaced with your app.
-        </h2>
-      </div>
-      
-    </main>
+    <div className="space-y-4">
+      {posts.length === 0 ? (
+        <div className="text-center text-gray-600">No posts yet. Be the first to post!</div>
+      ) : (
+        posts.map((p: Post) => <PostCard key={p.id} post={p} />)
+      )}
+    </div>
   );
 }
